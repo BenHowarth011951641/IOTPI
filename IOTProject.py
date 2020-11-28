@@ -35,6 +35,12 @@ def wheel(pos):
     return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
 
 while True:
+    for i in range(num_pixels):
+        pixels[i] = wheel(i)
+    
+    pixels.show()
+    time.sleep(2)
+        
     if enabled == True:
         pixels.fill((255, 255, 255))
     
