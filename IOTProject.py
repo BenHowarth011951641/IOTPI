@@ -1,9 +1,13 @@
-from nanpy import (ArduinoApi, SerialManager)
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from time import sleep
 import time
 import board
 import neopixel
- 
+import threading
+
+hostName = "192.168.248.169"
+serverPort = 8080
+
 pixel_pin = board.D18
  
 num_pixels = 100
@@ -34,24 +38,40 @@ def wheel(pos):
         b = int(255 - pos * 3)
     return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
 
-while True:
-    for i in range(num_pixels):
-        pixels[i] = wheel(i)
+class MyServer(BaseHTTPRequestHandler):
+    def do_GET(self):
+        global color, enabled
+        self.send_response(200)
+        color = int(self.path[1:])
+        if color <= 0:
+            enabled = False
+        else:
+            enabled = True
+        print(color)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+
+def runLights():
+    while True:
+        if enabled == True:
+            pixels.fill((255, 255, 255))
     
-    pixels.show()
-    time.sleep(2)
+        else:
+            pixels.fill((0, 0, 0))
         
-    if enabled == True:
-        pixels.fill((255, 255, 255))
-    
-    else:
-        pixels.fill((0, 0, 0))
-        
-    pixels.show()
-    time.sleep(1)
- 
-try:
-    connection = SerialManager()
-    a = ArduinoApi(connection = connection)
-except:
-    print("Failed to connect to Arduino")
+        pixels.show()
+        time.sleep(1)
+
+if __name__ == "__main__":        
+    webServer = HTTPServer((hostName, serverPort), MyServer)
+    print("Server started http://%s:%s" % (hostName, serverPort))
+
+    try:
+        x = threading.Thread(target = runLights)
+        x.start()
+        webServer.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+    webServer.server_close()
+    print("Server stopped.")
