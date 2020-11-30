@@ -42,33 +42,21 @@ class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
         global color, enabled
         self.send_response(200)
-        color = int(self.path[1:])
-        if color <= 0:
-            enabled = False
-        else:
-            enabled = True
+        color = self.path[1:]
         print(color)
+        updateLights(color)
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-def runLights():
-    while True:
-        if enabled == True:
-            pixels.fill((255, 255, 255))
-    
-        else:
-            pixels.fill((0, 0, 0))
-        
-        pixels.show()
-        time.sleep(1)
+def updateLights(color):
+    pixels.fill(tuple(int(color[i: i+2], 16) for i in (0, 2, 4)))
+    pixels.show()
 
 if __name__ == "__main__":        
     webServer = HTTPServer((hostName, serverPort), MyServer)
     print("Server started http://%s:%s" % (hostName, serverPort))
 
     try:
-        x = threading.Thread(target = runLights)
-        x.start()
         webServer.serve_forever()
     except KeyboardInterrupt:
         pass
